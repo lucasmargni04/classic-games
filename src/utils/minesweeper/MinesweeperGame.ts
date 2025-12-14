@@ -15,7 +15,9 @@ export class MinesweeperGame {
     board : number[][];
     mines : MatrixIndex[];
     totalMines : number;
+    squaresPeeked : number;
     gameOver : boolean;
+    victory : boolean;
 
     constructor(rows : number, cols : number, initialClick : MatrixIndex) {
         this.rows = rows;
@@ -27,11 +29,13 @@ export class MinesweeperGame {
         this.board[initialClick.row][initialClick.col] = 0;
 
         this.totalMines = Math.floor(this.rows * this.cols * minePercentage);
+        this.squaresPeeked = 1; // because of the initial click
 
         this.mines = [];
         this.getRandomMines(initialClick);
 
         this.gameOver = false;
+        this.victory = false;
     }
 
     private getRandomMines(initialClick : MatrixIndex) : void {
@@ -61,12 +65,20 @@ export class MinesweeperGame {
             // position on the board
 
             if(this.board[row][col] === boardStates.MINE) {
+                // it was a mine, game over
                 result = boardStates.MINE;
                 this.gameOver = true;
             } else if(this.board[row][col] === boardStates.NONE) {
+                // it was not a mine, we return the number of mines around
                 result = this.countMinesAround(row, col);
 
                 this.board[row][col] = result;
+                this.squaresPeeked++;
+
+                if(this.squaresPeeked === this.rows * this.cols - this.totalMines) {
+                    // all squares without mines discovered, the game has been won
+                    this.victory = true;
+                }
             } else {
                 // it was already peeked
                 result = this.board[row][col];
@@ -95,10 +107,8 @@ export class MinesweeperGame {
         return count;
     }
 
-    private resetBoard() : void {
-        this.board = new Array(this.rows)
-            .fill(null)
-            .map(() => new Array(this.cols).fill(boardStates.NONE));
+    isViscory() : boolean {
+        return this.victory;
     }
 
     printBoard() : void {

@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { MinesweeperGame, boardStates } from '../../utils/minesweeper/MinesweeperGame';
 import type { MatrixSize, MatrixIndex } from '../../types/board-types';
+import ModalEndGame from './ModalEndGame';
 
 const Minesweeper = ({ rows, cols } : MatrixSize) => {
     const [game, setGame] = useState<MinesweeperGame | null>(null);
     const [visibleBoard, setVisibleBoard] = useState<number[][]>(() => Array.from({ length: rows },
                                                 () => Array(cols).fill(boardStates.NONE)));
     const [gameOver, setGameOver] = useState<boolean>(false);
+    const [victory, setVictory] = useState<boolean>(false);
 
     const peek = (row : number, col : number) : void => {
         let currentGame : MinesweeperGame | null = game;
 
         if(currentGame === null) {
+            // creation of the game after first click
             currentGame = new MinesweeperGame(rows, cols, { row, col });
             setGame(currentGame);
         }
@@ -57,6 +60,10 @@ const Minesweeper = ({ rows, cols } : MatrixSize) => {
             }
 
             setVisibleBoard(copy);
+
+            if(currentGame.isViscory()) {
+                setVictory(true);
+            }
         }
     };
 
@@ -82,36 +89,60 @@ const Minesweeper = ({ rows, cols } : MatrixSize) => {
     const flag = (row : number, col : number) : void => {
         const current : number = visibleBoard[row][col];
 
-        if(current === boardStates.NONE || current === boardStates.FLAG) {
-            const newState : number = current === boardStates.NONE ? boardStates.FLAG : boardStates.NONE;
+        if(!gameOver) {
+            if(current === boardStates.NONE || current === boardStates.FLAG) {
+                const newState : number = current === boardStates.NONE ? boardStates.FLAG : boardStates.NONE;
 
-            setVisibleBoard((prev : number[][]) => {
-                let copy : number[][] = [ ...prev ];
-                copy[row][col] = newState;
-                return copy;
-            });
+                setVisibleBoard((prev : number[][]) => {
+                    let copy : number[][] = [ ...prev ];
+                    copy[row][col] = newState;
+                    return copy;
+                });
+            }
         }
+    };
+
+    const resetGame = () : void => {
+        setGame(null);
+        setGameOver(false);
+        setVictory(false);
+        setVisibleBoard(Array.from({ length: rows }, () => Array(cols).fill(boardStates.NONE)));
     };
 
     return (
         <main className='flex flex-col items-center mt-20'>
-            <h1>Minesweeper</h1>
-            <div className='p-8 m-5 grid'
-                style={{ gridTemplateColumns: `repeat(${rows}, minmax(0, 1fr))` }}>
-                {Array.from({ length: rows }).map((_, rowIndex) => {
-                    return Array.from({ length: cols }).map((_, colIndex) => {
-                        return (
-                            <button key={`${rowIndex}-${colIndex}`}
-                                onClick={() => peek(rowIndex, colIndex)}
-                                onContextMenu={(e) => {e.preventDefault(); flag(rowIndex, colIndex)}}
-                                className={`h-12 w-12 border-1 border-gray-800 text-2xl
-                                    ${visibleBoard[rowIndex][colIndex] === boardStates.NONE ? 'bg-gray-500' : 'bg-gray-600'}
-                                    `}>
-                                {visibleBoard[rowIndex][colIndex] === boardStates.NONE ? '' : visibleBoard[rowIndex][colIndex]}
-                            </button>
-                        );
-                    });
-                })}
+            <h1 className={`text-6xl font-extrabold tracking-wide
+                transition-colors duration-300
+                ${victory
+                    ? 'bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(250,204,21,0.6)]'
+                        : gameOver ? 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]'
+                            : 'bg-gradient-to-r from-gray-200 via-gray-400 to-gray-100 bg-clip-text text-transparent'}
+                `}>
+                Minesweeper
+            </h1>
+            
+            <div className='relative'>
+                <div className='p-8 m-5 grid'
+                    style={{ gridTemplateColumns: `repeat(${rows}, minmax(0, 1fr))` }}>
+                    {Array.from({ length: rows }).map((_, rowIndex) => {
+                        return Array.from({ length: cols }).map((_, colIndex) => {
+                            return (
+                                <button key={`${rowIndex}-${colIndex}`}
+                                    onClick={() => peek(rowIndex, colIndex)}
+                                    onContextMenu={(e) => {e.preventDefault(); flag(rowIndex, colIndex)}}
+                                    className={`h-12 w-12 border-1 border-gray-800 text-2xl
+                                        ${visibleBoard[rowIndex][colIndex] === boardStates.NONE ? 'bg-gray-500' : 'bg-gray-600'}
+                                        `}>
+                                    {visibleBoard[rowIndex][colIndex] === boardStates.NONE ? '' : visibleBoard[rowIndex][colIndex]}
+                                </button>
+                            );
+                        });
+                    })}
+                </div>
+            
+                {gameOver && <ModalEndGame victory={false} onReset={resetGame} />}
+                {victory && <ModalEndGame victory={true} onReset={resetGame} />}
+
             </div>
         </main>
     );
