@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MinesweeperGame, boardStates } from '../../utils/minesweeper/MinesweeperGame';
 import type { MatrixSize, MatrixIndex } from '../../types/board-types';
+import GameSquare from './GameSquare';
 import ModalEndGame from './ModalEndGame';
 
 const Minesweeper = ({ rows, cols } : MatrixSize) => {
@@ -127,14 +128,10 @@ const Minesweeper = ({ rows, cols } : MatrixSize) => {
                     {Array.from({ length: rows }).map((_, rowIndex) => {
                         return Array.from({ length: cols }).map((_, colIndex) => {
                             return (
-                                <button key={`${rowIndex}-${colIndex}`}
-                                    onClick={() => peek(rowIndex, colIndex)}
-                                    onContextMenu={(e) => {e.preventDefault(); flag(rowIndex, colIndex)}}
-                                    className={`h-12 w-12 border-1 border-gray-800 text-2xl
-                                        ${visibleBoard[rowIndex][colIndex] === boardStates.NONE ? 'bg-gray-500' : 'bg-gray-600'}
-                                        `}>
-                                    {visibleBoard[rowIndex][colIndex] === boardStates.NONE ? '' : visibleBoard[rowIndex][colIndex]}
-                                </button>
+                                <GameSquare key={`${rowIndex}-${colIndex}`}
+                                    value={visibleBoard[rowIndex][colIndex]}
+                                    peek={() => peek(rowIndex, colIndex)}
+                                    flag={() => flag(rowIndex, colIndex)} />
                             );
                         });
                     })}
